@@ -1,0 +1,21 @@
+{
+    "name": "battleship",
+    "version": "1.0.0",
+    "description": "RS.School NodeJS Battleship Server Task",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node ./index.js",
+        "start:dev": "nodemon ./index.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "maxsimusprime",
+    "keywords": ["node", "ws", "websocket"],
+    "license": "ISC",
+    "devDependencies": {
+        "nodemon": "^2.0.16"
+    },
+    "dependencies": {
+        "ws": "^8.8.0"
+    }
+}
