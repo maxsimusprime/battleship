@@ -47,6 +47,11 @@ export type RequestAddUserToRoomData = {
   indexRoom: number;
 };
 
+export type Game = {
+  idGame: number;
+  idPlayer: number;
+};
+
 type ResponseRegMessage1 = {
   type: 'reg';
   data: {

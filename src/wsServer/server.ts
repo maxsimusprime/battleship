@@ -47,7 +47,16 @@ export const wsServer = (port: number): void => {
           break;
 
         case 'add_user_to_room':
-          game.addUserToRoom(index, data);
+          const roomUsers = game.addUserToRoom(index, data);
+          if (roomUsers.length > 1) {
+            roomUsers
+              .map((user) => socketArray[user.index])
+              .filter((ws) => ws.OPEN)
+              .forEach((ws) => {
+                sendMessage('update_room', game.updateRoom(), ws);
+                sendMessage('create_game', game.createGame(index), ws);
+              });
+          }
           server.clients.forEach((client) => {
             if (client.OPEN) {
               sendMessage('update_room', game.updateRoom(), ws);

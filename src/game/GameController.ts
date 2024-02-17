@@ -1,4 +1,5 @@
 import {
+  Game,
   RequestAddUserToRoomData,
   RequestRegData,
   Room,
@@ -13,10 +14,13 @@ export class GameController {
 
   private _winners: Winner[];
 
+  private _games: Game[];
+
   constructor() {
     this._users = [];
     this._rooms = [];
     this._winners = [];
+    this._games = [];
   }
 
   public reg(index: number, messageData: string): string {
@@ -47,17 +51,14 @@ export class GameController {
     }
   }
 
-  public addUserToRoom(index: number, messageData: string): void {
+  public addUserToRoom(index: number, messageData: string): User[] {
     const data = JSON.parse(messageData) as RequestAddUserToRoomData;
     const { indexRoom } = data;
     const user = this._users.find((user) => user.index === index);
-    if (
-      this._rooms[indexRoom] &&
-      user &&
-      !this.isUserAlreadyInRoom(user, this._rooms[indexRoom])
-    ) {
+    if (user && !this.isUserAlreadyInRoom(user, this._rooms[indexRoom])) {
       this._rooms[indexRoom].roomUsers.push(user);
     }
+    return this._rooms[indexRoom].roomUsers;
   }
 
   public updateRoom(): string {
@@ -66,6 +67,11 @@ export class GameController {
 
   public updateWinners(): string {
     return JSON.stringify(this._winners);
+  }
+
+  public createGame(index: number): string {
+    const game = { idGame: this._games.length, idPlayer: index };
+    return JSON.stringify(game);
   }
 
   private isUserHasRoom(user: User): boolean {
