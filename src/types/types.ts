@@ -43,6 +43,10 @@ export type Winner = {
   wins: number;
 };
 
+export type RequestAddUserToRoomData = {
+  indexRoom: number;
+};
+
 type ResponseRegMessage1 = {
   type: 'reg';
   data: {

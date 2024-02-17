@@ -1,9 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { GameController } from 'game/GameController.js';
-import {
-  Message,
-  MessageType,
-} from 'types/types.js';
+import { Message, MessageType } from 'types/types.js';
 
 const game = new GameController();
 
@@ -19,33 +16,44 @@ export const wsServer = (port: number): void => {
   server.on('connection', (ws) => {
     socketArray.push(ws);
 
-    ws.on('message', (data) => {
+    ws.on('message', (rawData) => {
       const index = socketArray.findIndex((socket) => socket === ws);
 
-      const message = JSON.parse(data.toString()) as Message;
+      const message = JSON.parse(rawData.toString()) as Message;
       console.log(message);
 
-      switch (message.type) {
+      const { type, data } = message;
+
+      switch (type) {
         case 'reg':
-          const responseRegData = game.reg(index, message.data);
+          const responseRegData = game.reg(index, data);
           sendMessage('reg', responseRegData, ws);
+          server.clients.forEach((client) => {
+            if (client.OPEN) {
+              sendMessage('update_room', game.updateRoom(), ws);
+              sendMessage('update_winners', game.updateWinners(), ws);
+            }
+          });
           break;
 
         case 'create_room':
           game.createRoom(index);
-          const responseUpdateRoomData = game.updateRoom();
-          const responseUpdateWinnersData = game.updateWinners();
           server.clients.forEach((client) => {
             if (client.OPEN) {
-              sendMessage('update_room', responseUpdateRoomData, ws);
-              sendMessage('update_room', responseUpdateWinnersData, ws);
+              sendMessage('update_room', game.updateRoom(), ws);
+              sendMessage('update_winners', game.updateWinners(), ws);
             }
-          })
+          });
           break;
 
         case 'add_user_to_room':
-          sendMessage('update_room', '', ws);
-          sendMessage('create_game', '', ws);
+          game.addUserToRoom(index, data);
+          server.clients.forEach((client) => {
+            if (client.OPEN) {
+              sendMessage('update_room', game.updateRoom(), ws);
+              sendMessage('update_winners', game.updateWinners(), ws);
+            }
+          });
           break;
 
         case 'add_ships':
