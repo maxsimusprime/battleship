@@ -1,37 +1,14 @@
 import { WebSocket, WebSocketServer } from 'ws';
+import { GameController } from 'game/GameController.js';
 import {
   Message,
   MessageType,
-  RequestRegData,
-  Room,
-  User,
 } from 'types/types.js';
 
-const rooms: Room[] = [];
-
-const users: User[] = [];
+const game = new GameController();
 
 const sendMessage = (type: MessageType, data: string, ws: WebSocket): void => {
   ws.send(JSON.stringify({ type, data, id: 0 }));
-};
-
-const getResponseRegData = (index: number, messageData: string): string => {
-  const data = JSON.parse(messageData) as RequestRegData;
-  const { name } = data;
-  users.push({ name, index });
-  return JSON.stringify({ name, index, error: false, errorText: '' });
-};
-
-const getResponseCreateRoomData = (index: number) => {
-  const roomUser = users.find((user) => user.index === index);
-  if (roomUser) {
-    const room: Room = {
-      roomId: rooms.length,
-      roomUsers: [roomUser],
-    };
-    rooms.push(room);
-  }
-  return JSON.stringify(rooms);
 };
 
 export const wsServer = (port: number): void => {
@@ -50,17 +27,27 @@ export const wsServer = (port: number): void => {
 
       switch (message.type) {
         case 'reg':
-          const responseRegData = getResponseRegData(index, message.data);
+          const responseRegData = game.reg(index, message.data);
           sendMessage('reg', responseRegData, ws);
           break;
+
         case 'create_room':
-          const responseCreateRoomData = getResponseCreateRoomData(index);
-          sendMessage('update_room', responseCreateRoomData, ws);
+          game.createRoom(index);
+          const responseUpdateRoomData = game.updateRoom();
+          const responseUpdateWinnersData = game.updateWinners();
+          server.clients.forEach((client) => {
+            if (client.OPEN) {
+              sendMessage('update_room', responseUpdateRoomData, ws);
+              sendMessage('update_room', responseUpdateWinnersData, ws);
+            }
+          })
           break;
+
         case 'add_user_to_room':
           sendMessage('update_room', '', ws);
           sendMessage('create_game', '', ws);
           break;
+
         case 'add_ships':
           break;
         case 'attack':

@@ -26,7 +26,7 @@ export type RequestRegData = {
 export type User = {
   name: string;
   index: number;
-}
+};
 
 export type RoomUser = {
   name: string;
@@ -36,6 +36,11 @@ export type RoomUser = {
 export type Room = {
   roomId: number;
   roomUsers: User[];
+};
+
+export type Winner = {
+  name: string;
+  wins: number;
 };
 
 type ResponseRegMessage1 = {
