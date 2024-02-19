@@ -108,8 +108,24 @@ export const wsServer = (port: number): void => {
                 });
             }
           }
+          if (controller.isFinish(index, gameId)) {
+            controller.updateWinnersTable(index);
+            const { players, data } = controller.finish(index, gameId);
+            players
+              .map((player) => socketArray[player.indexPlayer])
+              .filter((socket) => socket.OPEN)
+              .forEach((socket) => {
+                sendMessage('finish', data, socket);
+                sendMessage(
+                  'update_winners',
+                  controller.updateWinners(),
+                  socket
+                );
+              });
+          }
           break;
         case 'randomAttack':
+          const randomAttackData = JSON.parse(data) as RequestAttackData;
           const attackFeedback = controller.randomAttack(index, data);
           if (attackFeedback) {
             attackFeedback.players
@@ -120,6 +136,24 @@ export const wsServer = (port: number): void => {
                   sendMessage('attack', data, socket);
                   sendMessage('turn', attackFeedback.turn, socket);
                 });
+              });
+          }
+          if (controller.isFinish(index, randomAttackData.gameId)) {
+            controller.updateWinnersTable(index);
+            const { players, data } = controller.finish(
+              index,
+              randomAttackData.gameId
+            );
+            players
+              .map((player) => socketArray[player.indexPlayer])
+              .filter((socket) => socket.OPEN)
+              .forEach((socket) => {
+                sendMessage('finish', data, socket);
+                sendMessage(
+                  'update_winners',
+                  controller.updateWinners(),
+                  socket
+                );
               });
           }
           break;

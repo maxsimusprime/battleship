@@ -22,7 +22,7 @@ export class Game {
     return { idGame: this.id, idPlayer: playerId };
   }
 
-  public getPlayersInfo() {
+  public getPlayersInfo(): Player[] {
     return this.players;
   }
 

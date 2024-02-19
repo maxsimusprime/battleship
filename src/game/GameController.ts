@@ -165,6 +165,29 @@ export class GameController {
     return Number(game?.getCurrentPlayer());
   }
 
+  public isFinish(index: number, gameId: number): boolean {
+    const game = this._games.find((game) => game.id === gameId) as Game;
+    return game?.getEnemyRemainedCells(index) <= 0;
+  }
+
+  public updateWinnersTable(index: number): void {
+    const { name } = this._users[index];
+    const winnerId = this._winners.findIndex((winner) => winner.name === name);
+    if (winnerId > -1) {
+      this._winners[winnerId].wins += 1;
+    } else {
+      this._winners.push({ name, wins: 1 });
+    }
+  }
+
+  public finish(index: number, gameId: number) {
+    const game = this._games.find((game) => game.id === gameId) as Game;
+    return {
+      players: game.getPlayersInfo(),
+      data: JSON.stringify({ winPlayer: index }),
+    };
+  }
+
   private isUserHasRoom(user: User): boolean {
     return !!this._rooms.find((room) =>
       room.roomUsers.find((roomUser) => roomUser === user)
