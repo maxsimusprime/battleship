@@ -2,7 +2,10 @@ import {
   Player,
   RequestAddShipsData,
   RequestAddUserToRoomData,
+  RequestAttackData,
   RequestRegData,
+  ResponseAttack,
+  ResponseAttackData,
   Room,
   User,
   Winner,
@@ -104,7 +107,33 @@ export class GameController {
 
   public getTurn(gameId: number): string {
     const game = this._games.find((game) => game.id === gameId);
-    return JSON.stringify(game?.getCurrentPlayer());
+    return JSON.stringify(game?.getCurrentTurn());
+  }
+
+  public attack(index: number, messageData: string): ResponseAttack | undefined {
+    const { gameId, x, y, indexPlayer } = JSON.parse(
+      messageData
+    ) as RequestAttackData;
+    const game = this._games.find((game) => game.id === gameId);
+    const players = game?.getPlayersInfo() as Player[];
+    const res = game?.attack(indexPlayer, { x, y }) as ResponseAttackData[];
+    const isHit = res.find(
+      (data) => data.status === 'shot' || data.status === 'killed'
+    );
+    if (res.length > 0) {
+      if (!isHit) game?.changeCurrentPlayer();
+      const turn = game?.getCurrentTurn();
+      return {
+        players,
+        turn: JSON.stringify(turn),
+        dataArray: res?.map((data) => JSON.stringify(data)),
+      };
+    }
+  }
+
+  public getCurrentPlayerId(gameId: number): number {
+    const game = this._games.find((game) => game.id === gameId);
+    return Number(game?.getCurrentPlayer());
   }
 
   private isUserHasRoom(user: User): boolean {

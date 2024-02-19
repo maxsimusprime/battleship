@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { GameController } from 'game/GameController.js';
-import { Message, MessageType } from 'types/types.js';
+import { Message, MessageType, RequestAttackData } from 'types/types.js';
 
 const controller = new GameController();
 
@@ -93,6 +93,21 @@ export const wsServer = (port: number): void => {
           }
           break;
         case 'attack':
+          const { gameId } = JSON.parse(data) as RequestAttackData;
+          if (controller.getCurrentPlayerId(gameId) === index) {
+            const attackFeedback = controller.attack(index, data);
+            if (attackFeedback) {
+              attackFeedback.players
+                .map((player) => socketArray[player.indexPlayer])
+                .filter((socket) => socket.OPEN)
+                .forEach((socket) => {
+                  attackFeedback.dataArray.forEach((data) => {
+                    sendMessage('attack', data, socket);
+                    sendMessage('turn', attackFeedback.turn, socket);
+                  });
+                });
+            }
+          }
           break;
         case 'randomAttack':
           break;

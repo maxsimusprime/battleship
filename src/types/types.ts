@@ -43,11 +43,13 @@ export type Game = {
   idPlayer: number;
 };
 
+export type Position = {
+  x: number;
+  y: number;
+};
+
 export type Ship = {
-  position: {
-    x: number;
-    y: number;
-  };
+  position: Position;
   direction: boolean;
   length: number;
   type: 'small' | 'medium' | 'large' | 'huge';
@@ -57,6 +59,8 @@ export type Player = {
   gameId: number;
   indexPlayer: number;
   ships: Ship[];
+  field: Cell[];
+  remained: number;
 };
 
 export type RequestAddUserToRoomData = {
@@ -66,5 +70,31 @@ export type RequestAddUserToRoomData = {
 export type RequestAddShipsData = {
   gameId: number;
   ships: Ship[];
-  indexPlayer: number /* id of the player in the current game session */;
+  indexPlayer: number;
+};
+
+export type RequestAttackData = {
+  gameId: number;
+  x: number;
+  y: number;
+  indexPlayer: number;
+};
+
+export type ResponseAttackData = {
+  position: Position;
+  currentPlayer: number;
+  status: 'miss' | 'killed' | 'shot';
+};
+
+export type ResponseAttack = {
+  players: Player[];
+  turn: string;
+  dataArray: string[];
+};
+
+export type Cell = {
+  position: Position;
+  linked: Position[];
+  isEmpty: boolean;
+  isOpen: boolean;
 };
