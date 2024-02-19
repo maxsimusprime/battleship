@@ -1,5 +1,6 @@
 import {
   Player,
+  Position,
   RequestAddShipsData,
   RequestAddUserToRoomData,
   RequestAttackData,
@@ -110,13 +111,41 @@ export class GameController {
     return JSON.stringify(game?.getCurrentTurn());
   }
 
-  public attack(index: number, messageData: string): ResponseAttack | undefined {
+  public attack(
+    index: number,
+    messageData: string
+  ): ResponseAttack | undefined {
     const { gameId, x, y, indexPlayer } = JSON.parse(
       messageData
     ) as RequestAttackData;
     const game = this._games.find((game) => game.id === gameId);
     const players = game?.getPlayersInfo() as Player[];
     const res = game?.attack(indexPlayer, { x, y }) as ResponseAttackData[];
+    const isHit = res.find(
+      (data) => data.status === 'shot' || data.status === 'killed'
+    );
+    if (res.length > 0) {
+      if (!isHit) game?.changeCurrentPlayer();
+      const turn = game?.getCurrentTurn();
+      return {
+        players,
+        turn: JSON.stringify(turn),
+        dataArray: res?.map((data) => JSON.stringify(data)),
+      };
+    }
+  }
+
+  public randomAttack(
+    index: number,
+    messageData: string
+  ): ResponseAttack | undefined {
+    const { gameId, indexPlayer } = JSON.parse(
+      messageData
+    ) as RequestAttackData;
+    const game = this._games.find((game) => game.id === gameId);
+    const players = game?.getPlayersInfo() as Player[];
+    const position = game?.getRandomPosition(indexPlayer) as Position;
+    const res = game?.attack(indexPlayer, position) as ResponseAttackData[];
     const isHit = res.find(
       (data) => data.status === 'shot' || data.status === 'killed'
     );

@@ -110,6 +110,18 @@ export const wsServer = (port: number): void => {
           }
           break;
         case 'randomAttack':
+          const attackFeedback = controller.randomAttack(index, data);
+          if (attackFeedback) {
+            attackFeedback.players
+              .map((player) => socketArray[player.indexPlayer])
+              .filter((socket) => socket.OPEN)
+              .forEach((socket) => {
+                attackFeedback.dataArray.forEach((data) => {
+                  sendMessage('attack', data, socket);
+                  sendMessage('turn', attackFeedback.turn, socket);
+                });
+              });
+          }
           break;
         default:
           break;

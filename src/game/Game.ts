@@ -109,6 +109,18 @@ export class Game {
     return this.players[enemyId].remained;
   }
 
+  public getRandomPosition(playerId: number): Position {
+    const enemyId = this.players.findIndex(
+      (player) => player.indexPlayer !== playerId
+    );
+    const x = Math.floor(Math.random() * 10);
+    const y = Math.floor(Math.random() * 10);
+    const isExist = this.players[enemyId].field
+      .filter((cell) => cell.isOpen)
+      .find((cell) => cell.position.x === x && cell.position.y === y);
+    return isExist ? this.getRandomPosition(playerId) : { x, y };
+  }
+
   private createField(ships: Ship[]): Cell[] {
     const field: Cell[] = [];
     ships.forEach((ship) => {
