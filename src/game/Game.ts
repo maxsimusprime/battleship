@@ -12,8 +12,8 @@ export class Game {
     this.currentPlayer = currentPlayer;
   }
 
-  public getGameInfo() {
-    return { idGame: this.id, idPlayer: this.currentPlayer };
+  public getGameInfo(playerId: number) {
+    return { idGame: this.id, idPlayer: playerId };
   }
 
   public addPlayer(indexPlayer: number, ships: Ship[]) {
@@ -26,5 +26,15 @@ export class Game {
       currentPlayerIndex: playerId,
       ships: this.players.find((player) => player.indexPlayer === playerId),
     };
+  }
+
+  public getCurrentPlayer() {
+    return { currentPlayer: this.currentPlayer };
+  }
+
+  public changeCurrentPlayer() {
+    this.currentPlayer = this.players.find(
+      (player) => player.indexPlayer !== this.currentPlayer
+    )?.indexPlayer as number;
   }
 }

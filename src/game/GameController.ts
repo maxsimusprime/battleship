@@ -84,11 +84,11 @@ export class GameController {
     return JSON.stringify(this._winners);
   }
 
-  public createGame(index: number, roomId: number): string {
+  public createGame(userId: number, roomId: number): string {
     const existedGame = this._games.find((game) => game.id === roomId);
-    const game = existedGame || new Game(roomId, index);
+    const game = existedGame || new Game(roomId, userId);
     if (!existedGame) this._games.push(game);
-    return JSON.stringify(game.getGameInfo());
+    return JSON.stringify(game.getGameInfo(userId));
   }
 
   public addShips(index: number, messageData: string): Player[] {
@@ -100,6 +100,11 @@ export class GameController {
   public startGame(gameId: number, playerId: number): string {
     const game = this._games.find((game) => game.id === gameId);
     return JSON.stringify(game?.startGame(playerId));
+  }
+
+  public getTurn(gameId: number): string {
+    const game = this._games.find((game) => game.id === gameId);
+    return JSON.stringify(game?.getCurrentPlayer());
   }
 
   private isUserHasRoom(user: User): boolean {

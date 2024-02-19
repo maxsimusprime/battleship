@@ -52,12 +52,15 @@ export const wsServer = (port: number): void => {
           const { roomId, roomUsers } = controller.addUserToRoom(index, data);
           if (roomUsers.length > 1) {
             roomUsers
-              .map((user) => socketArray[user.index])
-              .filter((socket) => socket.OPEN)
-              .forEach((socket) => {
+              .map((user) => ({
+                userId: user.index,
+                socket: socketArray[user.index],
+              }))
+              .filter(({ socket }) => socket.OPEN)
+              .forEach(({ userId, socket }) => {
                 sendMessage(
                   'create_game',
-                  controller.createGame(index, roomId),
+                  controller.createGame(userId, roomId),
                   socket
                 );
               });
@@ -85,6 +88,7 @@ export const wsServer = (port: number): void => {
                   controller.startGame(gameId, playerId),
                   socket
                 );
+                sendMessage('turn', controller.getTurn(gameId), socket);
               });
           }
           break;
