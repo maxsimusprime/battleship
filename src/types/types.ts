@@ -28,11 +28,6 @@ export type User = {
   index: number;
 };
 
-export type RoomUser = {
-  name: string;
-  index: number;
-};
-
 export type Room = {
   roomId: number;
   roomUsers: User[];
@@ -43,22 +38,33 @@ export type Winner = {
   wins: number;
 };
 
-export type RequestAddUserToRoomData = {
-  indexRoom: number;
-};
-
 export type Game = {
   idGame: number;
   idPlayer: number;
 };
 
-type ResponseRegMessage1 = {
-  type: 'reg';
-  data: {
-    name: string;
-    index: number;
-    error: boolean;
-    errorText: string;
+export type Ship = {
+  position: {
+    x: number;
+    y: number;
   };
-  id: 0;
+  direction: boolean;
+  length: number;
+  type: 'small' | 'medium' | 'large' | 'huge';
+};
+
+export type Player = {
+  gameId: number;
+  indexPlayer: number;
+  ships: Ship[];
+};
+
+export type RequestAddUserToRoomData = {
+  indexRoom: number;
+};
+
+export type RequestAddShipsData = {
+  gameId: number;
+  ships: Ship[];
+  indexPlayer: number /* id of the player in the current game session */;
 };

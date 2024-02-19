@@ -2,10 +2,12 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { GameController } from 'game/GameController.js';
 import { Message, MessageType } from 'types/types.js';
 
-const game = new GameController();
+const controller = new GameController();
 
 const sendMessage = (type: MessageType, data: string, ws: WebSocket): void => {
-  ws.send(JSON.stringify({ type, data, id: 0 }));
+  const message = JSON.stringify({ type, data, id: 0 });
+  console.log('Response message: ', message);
+  ws.send(message);
 };
 
 export const wsServer = (port: number): void => {
@@ -26,46 +28,65 @@ export const wsServer = (port: number): void => {
 
       switch (type) {
         case 'reg':
-          const responseRegData = game.reg(index, data);
+          const responseRegData = controller.reg(index, data);
           sendMessage('reg', responseRegData, ws);
-          server.clients.forEach((client) => {
-            if (client.OPEN) {
-              sendMessage('update_room', game.updateRoom(), ws);
-              sendMessage('update_winners', game.updateWinners(), ws);
+          server.clients.forEach((socket) => {
+            if (socket.OPEN) {
+              sendMessage('update_room', controller.updateRoom(), socket);
+              sendMessage('update_winners', controller.updateWinners(), socket);
             }
           });
           break;
 
         case 'create_room':
-          game.createRoom(index);
-          server.clients.forEach((client) => {
-            if (client.OPEN) {
-              sendMessage('update_room', game.updateRoom(), ws);
-              sendMessage('update_winners', game.updateWinners(), ws);
+          controller.createRoom(index);
+          server.clients.forEach((socket) => {
+            if (socket.OPEN) {
+              sendMessage('update_room', controller.updateRoom(), socket);
+              sendMessage('update_winners', controller.updateWinners(), socket);
             }
           });
           break;
 
         case 'add_user_to_room':
-          const roomUsers = game.addUserToRoom(index, data);
+          const { roomId, roomUsers } = controller.addUserToRoom(index, data);
           if (roomUsers.length > 1) {
             roomUsers
               .map((user) => socketArray[user.index])
-              .filter((ws) => ws.OPEN)
-              .forEach((ws) => {
-                sendMessage('update_room', game.updateRoom(), ws);
-                sendMessage('create_game', game.createGame(index), ws);
+              .filter((socket) => socket.OPEN)
+              .forEach((socket) => {
+                sendMessage(
+                  'create_game',
+                  controller.createGame(index, roomId),
+                  socket
+                );
               });
           }
-          server.clients.forEach((client) => {
-            if (client.OPEN) {
-              sendMessage('update_room', game.updateRoom(), ws);
-              sendMessage('update_winners', game.updateWinners(), ws);
+          server.clients.forEach((socket) => {
+            if (socket.OPEN) {
+              sendMessage('update_room', controller.updateRoom(), socket);
             }
           });
           break;
 
         case 'add_ships':
+          const players = controller.addShips(index, data);
+          if (players.length > 1) {
+            const { gameId } = players[0];
+            players
+              .map((player) => ({
+                playerId: player.indexPlayer,
+                socket: socketArray[player.indexPlayer],
+              }))
+              .filter(({ socket }) => socket.OPEN)
+              .forEach(({ playerId, socket }) => {
+                sendMessage(
+                  'start_game',
+                  controller.startGame(gameId, playerId),
+                  socket
+                );
+              });
+          }
           break;
         case 'attack':
           break;

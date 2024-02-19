@@ -1,11 +1,14 @@
 import {
-  Game,
+  Player,
+  RequestAddShipsData,
   RequestAddUserToRoomData,
   RequestRegData,
   Room,
   User,
   Winner,
 } from 'types/types.js';
+import { Game } from './Game.js';
+import { generateUID } from 'utils/generateUID.js';
 
 export class GameController {
   private _users: User[];
@@ -44,34 +47,59 @@ export class GameController {
     const user = this._users.find((user) => user.index === index);
     if (user && !this.isUserHasRoom(user)) {
       const room: Room = {
-        roomId: this._rooms.length,
+        roomId: generateUID(),
         roomUsers: [user],
       };
       this._rooms.push(room);
     }
   }
 
-  public addUserToRoom(index: number, messageData: string): User[] {
+  public addUserToRoom(index: number, messageData: string): Room {
     const data = JSON.parse(messageData) as RequestAddUserToRoomData;
     const { indexRoom } = data;
     const user = this._users.find((user) => user.index === index);
-    if (user && !this.isUserAlreadyInRoom(user, this._rooms[indexRoom])) {
-      this._rooms[indexRoom].roomUsers.push(user);
+    const roomIndex = this._rooms.findIndex(
+      (room) => room.roomId === indexRoom
+    );
+    if (
+      user &&
+      roomIndex > -1 &&
+      !this.isUserAlreadyInRoom(user, this._rooms[roomIndex])
+    ) {
+      this._rooms[roomIndex].roomUsers.push(user);
     }
-    return this._rooms[indexRoom].roomUsers;
+    const room = { ...this._rooms[roomIndex] };
+    if (this._rooms[roomIndex].roomUsers.length > 1)
+      this._rooms = this._rooms.filter((room) => room.roomId !== roomIndex);
+    return room;
   }
 
   public updateRoom(): string {
-    return JSON.stringify(this._rooms);
+    return JSON.stringify(
+      this._rooms.filter((room) => room.roomUsers.length === 1)
+    );
   }
 
   public updateWinners(): string {
     return JSON.stringify(this._winners);
   }
 
-  public createGame(index: number): string {
-    const game = { idGame: this._games.length, idPlayer: index };
-    return JSON.stringify(game);
+  public createGame(index: number, roomId: number): string {
+    const existedGame = this._games.find((game) => game.id === roomId);
+    const game = existedGame || new Game(roomId, index);
+    if (!existedGame) this._games.push(game);
+    return JSON.stringify(game.getGameInfo());
+  }
+
+  public addShips(index: number, messageData: string): Player[] {
+    const { gameId, ships } = JSON.parse(messageData) as RequestAddShipsData;
+    const game = this._games.find((game) => game.id === gameId);
+    return game ? game?.addPlayer(index, ships) : [];
+  }
+
+  public startGame(gameId: number, playerId: number): string {
+    const game = this._games.find((game) => game.id === gameId);
+    return JSON.stringify(game?.startGame(playerId));
   }
 
   private isUserHasRoom(user: User): boolean {
