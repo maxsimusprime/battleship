@@ -68,16 +68,58 @@ export class Game {
     const cellId = this.players[enemyId].field.findIndex(
       (cell) => cell.position.x === position.x && cell.position.y === position.y
     );
+
+    const enemy = this.players.find(
+      (player) => player.indexPlayer !== playerId
+    );
+
+    const cell = enemy?.field.find(
+      (cell) => cell.position.x === position.x && cell.position.y === position.y
+    );
+
     if (cellId > -1) {
       if (!this.players[enemyId].field[cellId].isOpen) {
         if (!this.players[enemyId].field[cellId].isEmpty) {
           this.players[enemyId].field[cellId].isOpen = true;
           this.players[enemyId].remained -= 1;
-          res.push({
-            position,
-            currentPlayer: playerId,
-            status: 'shot',
-          });
+          const isKilled = !this.players[enemyId].field[cellId].linked.find(
+            (pos) =>
+              !this.players[enemyId].field.find(
+                (cell) => cell.position.x === pos.x && cell.position.y === pos.y
+              )?.isOpen
+          );
+          if (isKilled) {
+            res.push({
+              position,
+              currentPlayer: playerId,
+              status: 'killed',
+            });
+            const shipCellPositions = this.getShipCellPositions(
+              this.players[enemyId].field[cellId]
+            );
+            shipCellPositions.forEach((position) => {
+              res.push({
+                position,
+                currentPlayer: playerId,
+                status: 'killed',
+              });
+            });
+            const cellAroundShipPosition =
+              this.getCellAroundShipPosition(shipCellPositions);
+            cellAroundShipPosition.forEach((position) => {
+              res.push({
+                position,
+                currentPlayer: playerId,
+                status: 'miss',
+              });
+            });
+          } else {
+            res.push({
+              position,
+              currentPlayer: playerId,
+              status: 'shot',
+            });
+          }
         } else {
           res.push({
             position,
@@ -124,12 +166,16 @@ export class Game {
   private createField(ships: Ship[]): Cell[] {
     const field: Cell[] = [];
     ships.forEach((ship) => {
-      const { position, direction, length } = ship;
+      const {
+        position: { x, y },
+        direction,
+        length,
+      } = ship;
       Array.from({ length })
         .map((_, index) => ({
           position: {
-            x: direction ? position.x : position.x + index,
-            y: direction ? position.y + index : position.y,
+            x: direction ? x : x + index,
+            y: direction ? y + index : y,
           },
           isEmpty: false,
           isOpen: false,
@@ -137,15 +183,45 @@ export class Game {
         .map((cell, _, arr) => ({
           ...cell,
           linked: arr
+            .map((cell) => cell.position)
             .filter(
-              (el) =>
-                el.position.x !== cell.position.x &&
-                el.position.y !== cell.position.y
-            )
-            .map((el) => el.position),
+              (pos) => pos.x !== cell.position.x || pos.y !== cell.position.y
+            ),
         }))
         .forEach((cell) => field.push(cell));
     });
     return field;
+  }
+
+  private getShipCellPositions(cell: Cell): Position[] {
+    const result: Position[] = [];
+    result.push(cell.position);
+    cell.linked.forEach((position) => result.push(position));
+    return result;
+  }
+
+  private getCellAroundShipPosition(positions: Position[]): Position[] {
+    const result: Position[] = [];
+    positions.forEach(({ x, y }) => {
+      const startX = x - 1;
+      const endX = x + 1;
+      const startY = y - 1;
+      const endY = y + 1;
+
+      for (let posX = startX; posX <= endX; posX++) {
+        for (let posY = startY; posY <= endY; posY++) {
+          if (
+            posX >= 0 &&
+            posY >= 0 &&
+            (posX !== x || posY !== y) &&
+            !result.find((pos) => pos.x === posX && pos.y === posY) &&
+            !positions.find((pos) => pos.x === posX && pos.y === posY)
+          ) {
+            result.push({ x: posX, y: posY });
+          }
+        }
+      }
+    });
+    return result;
   }
 }
