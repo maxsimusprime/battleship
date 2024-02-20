@@ -79,9 +79,7 @@ export class GameController {
   }
 
   public updateRoom(): string {
-    return JSON.stringify(
-      this._rooms.filter((room) => room.roomUsers.length === 1)
-    );
+    return JSON.stringify(this._rooms);
   }
 
   public updateWinners(): string {
@@ -92,6 +90,7 @@ export class GameController {
     const existedGame = this._games.find((game) => game.id === roomId);
     const game = existedGame || new Game(roomId, userId);
     if (!existedGame) this._games.push(game);
+    this._rooms = this._rooms.filter((room) => room.roomId !== roomId);
     return JSON.stringify(game.getGameInfo(userId));
   }
 
