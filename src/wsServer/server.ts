@@ -32,8 +32,16 @@ export const wsServer = (port: number): void => {
           sendMessage('reg', responseRegData, ws);
           server.clients.forEach((socket) => {
             if (socket.OPEN) {
-              sendMessage('update_room', controller.updateRoom(), socket);
-              sendMessage('update_winners', controller.updateWinners(), socket);
+              sendMessage(
+                'update_room',
+                controller.getRoomListInStringFormat(),
+                socket
+              );
+              sendMessage(
+                'update_winners',
+                controller.getWinnerListInStringFormat(),
+                socket
+              );
             }
           });
           break;
@@ -42,8 +50,16 @@ export const wsServer = (port: number): void => {
           controller.createRoom(index);
           server.clients.forEach((socket) => {
             if (socket.OPEN) {
-              sendMessage('update_room', controller.updateRoom(), socket);
-              sendMessage('update_winners', controller.updateWinners(), socket);
+              sendMessage(
+                'update_room',
+                controller.getRoomListInStringFormat(),
+                socket
+              );
+              sendMessage(
+                'update_winners',
+                controller.getWinnerListInStringFormat(),
+                socket
+              );
             }
           });
           break;
@@ -67,7 +83,11 @@ export const wsServer = (port: number): void => {
           }
           server.clients.forEach((socket) => {
             if (socket.OPEN) {
-              sendMessage('update_room', controller.updateRoom(), socket);
+              sendMessage(
+                'update_room',
+                controller.getRoomListInStringFormat(),
+                socket
+              );
             }
           });
           break;
@@ -94,7 +114,7 @@ export const wsServer = (port: number): void => {
           break;
         case 'attack':
           const { gameId } = JSON.parse(data) as RequestAttackData;
-          if (controller.getCurrentPlayerId(gameId) === index) {
+          if (controller.getCurrentTurnPlayerId(gameId) === index) {
             const attackFeedback = controller.attack(index, data);
             if (attackFeedback) {
               attackFeedback.players
@@ -116,9 +136,13 @@ export const wsServer = (port: number): void => {
               .filter((socket) => socket.OPEN)
               .forEach((socket) => {
                 sendMessage('finish', data, socket);
+              });
+            socketArray
+              .filter((socket) => socket.OPEN)
+              .forEach((socket) => {
                 sendMessage(
                   'update_winners',
-                  controller.updateWinners(),
+                  controller.getWinnerListInStringFormat(),
                   socket
                 );
               });
@@ -149,17 +173,66 @@ export const wsServer = (port: number): void => {
               .filter((socket) => socket.OPEN)
               .forEach((socket) => {
                 sendMessage('finish', data, socket);
+              });
+            socketArray
+              .filter((socket) => socket.OPEN)
+              .forEach((socket) => {
                 sendMessage(
                   'update_winners',
-                  controller.updateWinners(),
+                  controller.getWinnerListInStringFormat(),
                   socket
                 );
               });
           }
           break;
+        case 'single_play':
+          break;
         default:
           break;
       }
+    });
+
+    ws.on('close', () => {
+      const index = socketArray.findIndex((socket) => socket === ws);
+      if (controller.isUserInAnyGame(index)) {
+        const gameId = controller.getGameIdByPlayerId(index);
+        const enemyId = controller.getEnemyIdByPlayerId(index);
+        controller.updateWinnersTable(enemyId);
+        const { players, data } = controller.finish(enemyId, gameId);
+        players
+          .map((player) => socketArray[player.indexPlayer])
+          .filter((socket) => socket.OPEN)
+          .forEach((socket) => {
+            sendMessage('finish', data, socket);
+          });
+        socketArray
+          .filter((socket) => socket.OPEN)
+          .forEach((socket) => {
+            sendMessage(
+              'update_winners',
+              controller.getWinnerListInStringFormat(),
+              socket
+            );
+          });
+      }
+      if (controller.isUserInAnyRoom(index)) {
+        controller.deleteUserFromAllRooms(index);
+        server.clients.forEach((socket) => {
+          if (socket.OPEN) {
+            sendMessage(
+              'update_room',
+              controller.getRoomListInStringFormat(),
+              socket
+            );
+          }
+        });
+      }
+    });
+
+    ws.on('error', (err) => {
+      const index = socketArray.findIndex((socket) => socket === ws);
+      console.log(`socket id ${index} thrown Error: ${err}`);
+      ws.close();
     });
   });
 };

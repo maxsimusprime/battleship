@@ -49,7 +49,7 @@ export class GameController {
 
   public createRoom(index: number): void {
     const user = this._users.find((user) => user.index === index);
-    if (user && !this.isUserHasRoom(user)) {
+    if (user && !this.isUserInAnyRoom(index)) {
       const room: Room = {
         roomId: generateUID(),
         roomUsers: [user],
@@ -68,7 +68,7 @@ export class GameController {
     if (
       user &&
       roomIndex > -1 &&
-      !this.isUserAlreadyInRoom(user, this._rooms[roomIndex])
+      !this.isUserInRoom(user, this._rooms[roomIndex])
     ) {
       this._rooms[roomIndex].roomUsers.push(user);
     }
@@ -78,11 +78,28 @@ export class GameController {
     return room;
   }
 
-  public updateRoom(): string {
+  public deleteUserFromAllRooms(index: number) {
+    this._rooms.forEach(({ roomId, roomUsers }) => {
+      const userId = roomUsers.findIndex((user) => user.index === index);
+      if (userId > -1) {
+        if (roomUsers.length < 2) {
+          this._rooms = this._rooms.filter(
+            (roomToDelete) => roomToDelete.roomId !== roomId
+          );
+        } else {
+          roomUsers = roomUsers.filter(
+            (userToDelete) => userToDelete.index !== index
+          );
+        }
+      }
+    });
+  }
+
+  public getRoomListInStringFormat(): string {
     return JSON.stringify(this._rooms);
   }
 
-  public updateWinners(): string {
+  public getWinnerListInStringFormat(): string {
     return JSON.stringify(this._winners);
   }
 
@@ -103,6 +120,20 @@ export class GameController {
   public startGame(gameId: number, playerId: number): string {
     const game = this._games.find((game) => game.id === gameId);
     return JSON.stringify(game?.startGame(playerId));
+  }
+
+  public getGameIdByPlayerId(playerId: number): number {
+    const game = this._games.find((game) =>
+      game.getPlayersInfo().find((player) => player.indexPlayer === playerId)
+    );
+    return game?.id as number;
+  }
+
+  public getEnemyIdByPlayerId(playerId: number): number {
+    const gameId = this.getGameIdByPlayerId(playerId);
+    const game = this._games.find((game) => game.id === gameId);
+    const enemy = game?.getPlayersInfo().find((player) => player.indexPlayer !== playerId);
+    return enemy?.indexPlayer as number;
   }
 
   public getTurn(gameId: number): string {
@@ -159,7 +190,7 @@ export class GameController {
     }
   }
 
-  public getCurrentPlayerId(gameId: number): number {
+  public getCurrentTurnPlayerId(gameId: number): number {
     const game = this._games.find((game) => game.id === gameId);
     return Number(game?.getCurrentPlayer());
   }
@@ -187,13 +218,19 @@ export class GameController {
     };
   }
 
-  private isUserHasRoom(user: User): boolean {
+  public isUserInAnyRoom(index: number): boolean {
     return !!this._rooms.find((room) =>
-      room.roomUsers.find((roomUser) => roomUser === user)
+      room.roomUsers.find((roomUser) => roomUser.index === index)
     );
   }
 
-  private isUserAlreadyInRoom(user: User, room: Room): boolean {
+  private isUserInRoom(user: User, room: Room): boolean {
     return !!room.roomUsers.find((roomUser) => roomUser === user);
+  }
+
+  public isUserInAnyGame(index: number): boolean {
+    return !!this._games.find((game) =>
+      game.getPlayersInfo().find((player) => player.indexPlayer === index)
+    );
   }
 }

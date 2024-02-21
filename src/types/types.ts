@@ -10,7 +10,8 @@ export type MessageType =
   | 'attack'
   | 'randomAttack'
   | 'turn'
-  | 'finish';
+  | 'finish'
+  | 'single_play';
 
 export type Message = {
   type: MessageType;
