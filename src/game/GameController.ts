@@ -13,6 +13,7 @@ import {
 } from 'types/types.js';
 import { Game } from './Game.js';
 import { generateUID } from 'utils/generateUID.js';
+import { Bot } from './Bot.js';
 
 export class GameController {
   private _users: User[];
@@ -47,15 +48,22 @@ export class GameController {
     }
   }
 
-  public createRoom(index: number): void {
-    const user = this._users.find((user) => user.index === index);
-    if (user && !this.isUserInAnyRoom(index)) {
+  public createRoom(index: number): number {
+    let roomId = generateUID();
+    if (!this.isUserInAnyRoom(index)) {
+      const user = this._users.find((user) => user.index === index) as User;
       const room: Room = {
-        roomId: generateUID(),
+        roomId,
         roomUsers: [user],
       };
       this._rooms.push(room);
+    } else {
+      const room = this._rooms.find((room) =>
+        room.roomUsers.find((user) => user.index === index)
+      );
+      if (room) roomId = room.roomId;
     }
+    return roomId;
   }
 
   public addUserToRoom(index: number, messageData: string): Room {
@@ -132,19 +140,18 @@ export class GameController {
   public getEnemyIdByPlayerId(playerId: number): number {
     const gameId = this.getGameIdByPlayerId(playerId);
     const game = this._games.find((game) => game.id === gameId);
-    const enemy = game?.getPlayersInfo().find((player) => player.indexPlayer !== playerId);
+    const enemy = game
+      ?.getPlayersInfo()
+      .find((player) => player.indexPlayer !== playerId);
     return enemy?.indexPlayer as number;
   }
 
-  public getTurn(gameId: number): string {
+  public getTurnInfoInStringFormat(gameId: number): string {
     const game = this._games.find((game) => game.id === gameId);
     return JSON.stringify(game?.getCurrentTurn());
   }
 
-  public attack(
-    index: number,
-    messageData: string
-  ): ResponseAttack | undefined {
+  public attack(messageData: string): ResponseAttack | undefined {
     const { gameId, x, y, indexPlayer } = JSON.parse(
       messageData
     ) as RequestAttackData;
@@ -165,10 +172,7 @@ export class GameController {
     }
   }
 
-  public randomAttack(
-    index: number,
-    messageData: string
-  ): ResponseAttack | undefined {
+  public randomAttack(messageData: string): ResponseAttack | undefined {
     const { gameId, indexPlayer } = JSON.parse(
       messageData
     ) as RequestAttackData;
@@ -232,5 +236,10 @@ export class GameController {
     return !!this._games.find((game) =>
       game.getPlayersInfo().find((player) => player.indexPlayer === index)
     );
+  }
+
+  public addBotToRoom(roomId: number) {
+    const bot = new Bot(roomId);
+    bot.init();
   }
 }

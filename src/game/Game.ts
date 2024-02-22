@@ -3,6 +3,8 @@ import {
   Player,
   Position,
   ResponseAttackData,
+  ResponseCreateGameData,
+  ResponseTurnData,
   Ship,
 } from 'types/types.js';
 
@@ -18,7 +20,7 @@ export class Game {
     this.currentPlayer = currentPlayer;
   }
 
-  public getGameInfo(playerId: number) {
+  public getGameInfo(playerId: number): ResponseCreateGameData {
     return { idGame: this.id, idPlayer: playerId };
   }
 
@@ -45,7 +47,7 @@ export class Game {
     };
   }
 
-  public getCurrentTurn() {
+  public getCurrentTurn(): ResponseTurnData {
     return { currentPlayer: this.currentPlayer };
   }
 

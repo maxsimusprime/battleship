@@ -108,14 +108,18 @@ export const wsServer = (port: number): void => {
                   controller.startGame(gameId, playerId),
                   socket
                 );
-                sendMessage('turn', controller.getTurn(gameId), socket);
+                sendMessage(
+                  'turn',
+                  controller.getTurnInfoInStringFormat(gameId),
+                  socket
+                );
               });
           }
           break;
         case 'attack':
           const { gameId } = JSON.parse(data) as RequestAttackData;
           if (controller.getCurrentTurnPlayerId(gameId) === index) {
-            const attackFeedback = controller.attack(index, data);
+            const attackFeedback = controller.attack(data);
             if (attackFeedback) {
               attackFeedback.players
                 .map((player) => socketArray[player.indexPlayer])
@@ -150,7 +154,7 @@ export const wsServer = (port: number): void => {
           break;
         case 'randomAttack':
           const randomAttackData = JSON.parse(data) as RequestAttackData;
-          const attackFeedback = controller.randomAttack(index, data);
+          const attackFeedback = controller.randomAttack(data);
           if (attackFeedback) {
             attackFeedback.players
               .map((player) => socketArray[player.indexPlayer])
@@ -186,6 +190,8 @@ export const wsServer = (port: number): void => {
           }
           break;
         case 'single_play':
+          const roomIndex = controller.createRoom(index);
+          controller.addBotToRoom(roomIndex);
           break;
         default:
           break;

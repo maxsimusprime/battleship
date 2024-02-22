@@ -11,7 +11,8 @@ export type MessageType =
   | 'randomAttack'
   | 'turn'
   | 'finish'
-  | 'single_play';
+  | 'single_play'
+  | 'add_ships';
 
 export type Message = {
   type: MessageType;
@@ -66,6 +67,15 @@ export type Player = {
 
 export type RequestAddUserToRoomData = {
   indexRoom: number;
+};
+
+export type ResponseCreateGameData = {
+  idGame: number;
+  idPlayer: number;
+};
+
+export type ResponseTurnData = {
+  currentPlayer: number;
 };
 
 export type RequestAddShipsData = {
